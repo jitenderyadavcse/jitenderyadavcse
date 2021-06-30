@@ -1,0 +1,62 @@
+[agd_user@localhost playbooks]$ cat start_file.yml
+---
+
+- name: Weblogic Patch Module
+  hosts: self
+  gather_facts: no
+  tasks:
+    - name: Get Patch ID
+      shell: " cat /home/agd_user/JENKINS_SCRIPTS/patch_info.txt |grep -i patch_id | awk -F':' '{print $2}' "
+      register: patch_id
+    - name: Get HOST GROUP
+      shell: " cat /home/agd_user/JENKINS_SCRIPTS/patch_info.txt |grep -i hostgroup | awk -F':' '{print $2}' "
+      register: hostgroup
+
+    - name: get details
+      shell: " find /home/agd_user/playbooks/WEBLOGIC_PATCHES/ -name '*{{patch_id.stdout}}*.zip' "
+      register: op
+
+    - name: check file status
+      stat:
+        path: "{{op.stdout}}"
+      register: file_status
+
+    - name: printing file name
+      debug:
+         msg: "{{ op.stdout}}"
+
+    - name: PROCEED OR NOT
+      fail: msg=" PATCH FILE not found"
+      when: file_status.stat.exists == False
+
+    - set_fact:
+         hostgroup_name: "{{ hostgroup.stdout }}"
+
+    - name: GET PATCH Name
+      shell: "echo {{op.stdout}} | awk -F'/' '{print $NF}'"
+      register: patch_name
+
+    - name: print patch name
+      debug:
+        msg: "{{ patch_name.stdout }}"
+    - set_fact:
+         full_patch_name: "{{ patch_name.stdout }}"
+
+
+- hosts: "{{ hostvars[groups['self'][0]]['hostgroup_name'] }}"
+  gather_facts: no
+  tasks:
+    - debug:
+        msg: "{{ hostvars[groups['self'][0]]['hostgroup_name'] }}"
+
+
+    - name: Date TIme
+      shell: "date +%F:%h:%m:%s"
+      register: date_time
+
+    - name: start weblogic
+      shell: "$HOME/SCRIPTS/JENKINS/jen_completestart.sh '{{date_time.stdout}}' "
+
+#    - name: start weblogic
+#      shell: "$HOME/SCRIPTS/completestart.sh"
+
