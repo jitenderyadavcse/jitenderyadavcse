@@ -1,0 +1,9 @@
+TUX_JBOSS_SERVER,SERVER=10.14.113.81,APPNAME=KenanFX_Butterfly,USER=arbor,MONITOR=server_status value=0
+TUX_JBOSS_THREAD,SERVER=10.14.113.81,APPNAME=KenanFX_Butterfly,USER=arbor,MONITOR=thread_count value=853
+TUX_JBOSS_APP,SERVER=10.14.113.81,APPNAME=KenanFX_Butterfly,USER=arbor,MONITOR=app_status,WAR=fx_rest.war value=1
+TUX_JBOSS_APP,SERVER=10.14.113.81,APPNAME=KenanFX_Butterfly,USER=arbor,MONITOR=app_status,WAR=auth-server.war value=0
+TUX_JBOSS_HEAP,SERVER=10.14.113.81,APPNAME=KenanFX_Butterfly,USER=arbor,MONITOR=heap_status,TYPE=init_heap_mem  value=65536
+TUX_JBOSS_HEAP,SERVER=10.14.113.81,APPNAME=KenanFX_Butterfly,USER=arbor,MONITOR=heap_status,TYPE=used_heap_mem  value=26787
+TUX_JBOSS_HEAP,SERVER=10.14.113.81,APPNAME=KenanFX_Butterfly,USER=arbor,MONITOR=heap_status,TYPE=committed_heap  value=64937
+TUX_JBOSS_HEAP,SERVER=10.14.113.81,APPNAME=KenanFX_Butterfly,USER=arbor,MONITOR=heap_status,TYPE=max_heap  value=64937
+TUX_JBOSS_THREAD,SERVER=10.14.113.81,APPNAME=KenanFX_Butterfly,USER=arbor,MONITOR=daemon_thread_count value=723
