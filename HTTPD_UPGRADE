@@ -1,0 +1,53 @@
+[agd_user@localhost playbooks]$ cat httpd_upgrade.yml
+---
+ - hosts: self
+   vars_prompt:
+   - name: "prefix"
+     prompt: "Enter prefix you want to install?"
+
+   tasks:
+   - name: Unarchive Apache
+     unarchive:
+        src: /home/agd_user/ApacheBinaries/httpd-2.4.46.tar.gz
+        dest: /home/agd_user/ApacheBinaries/ApacheExtract/
+        remote_src: no
+        mode: 0755
+   - name: Unarchive apr
+     unarchive:
+        src: /home/agd_user/ApacheBinaries/apr-1.6.5.tar.gz
+        dest: /home/agd_user/ApacheBinaries/ApacheExtract/
+        remote_src: no
+        mode: 0755
+   - name: Unarchive apr-util Pacakage
+     unarchive:
+        src: /home/agd_user/ApacheBinaries/apr-util-1.6.1.tar.gz
+        dest: /home/agd_user/ApacheBinaries/ApacheExtract/
+        remote_src: no
+        mode: 0755
+   - name: Copy apr in srclib
+     command: cp -r /home/agd_user/ApacheBinaries/ApacheExtract/apr-1.6.5  /home/agd_user/ApacheBinaries/ApacheExtract/httpd-2.4.46/srclib/apr
+   - name: copy apr-util in srclib
+     command: cp -r /home/agd_user/ApacheBinaries/ApacheExtract/apr-util-1.6.1 /home/agd_user/ApacheBinaries/ApacheExtract/httpd-2.4.46/srclib/apr-util
+   - name: Unarchive pcre Package
+     unarchive:
+        src: /home/agd_user/ApacheBinaries/pcre-8.43.tar.gz
+        dest: /home/agd_user/ApacheBinaries/ApacheExtract/
+        remote_src: no
+        mode: 0755
+   - name: Install pcre
+     command: "{{ item }} chdir=/home/agd_user/ApacheBinaries/ApacheExtract/pcre-8.43"
+     with_items:
+          - ./configure --prefix=/home/agd_user/ApacheBinaries/ApacheExtract/pcre
+          - make
+          - make install
+   - name: install apache
+     command: "{{ item }} chdir=/home/agd_user/ApacheBinaries/ApacheExtract/httpd-2.4.46"
+     with_items:
+           - >
+             ./configure --prefix={{prefix}}/httpd-2.4.46 --with-mpm=worker --enable-unique-id=shared --enable-ssl=--enable-proxy-balancer=shared --enable-proxy=shared
+             --enable-proxy-connect=shared --enable-proxy-http=shared --enable-vhost-alias=shared --enable-so --enable-cache=shared --enable-headers=shared --enable-ssl=shared
+             --enable-module=--enable-mods-shared=all --with-pcre=/home/agd_user/ApacheBinaries/ApacheExtract/pcre
+           - make clean
+           - make
+           - make install
+
