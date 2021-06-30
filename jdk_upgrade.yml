@@ -1,0 +1,132 @@
+[agd_user@localhost JDK_UPGRADE]$ cat jdk_upgrade.yml
+---
+
+
+- name: test
+  hosts: self
+  gather_facts: no
+  tasks:
+    - name: get details
+      command: "cat /home/agd_user/playbooks/JDK_UPGRADE/jdk_version"
+      register: jdk_version
+    - set_fact:
+         serial_var: "{{ jdk_version.stdout }}"
+    - name: Check jdk file
+      stat:
+         path: /home/agd_user/playbooks/JDK_UPGRADE/JDK_BINARIES/{{ jdk_version.stdout }}
+      register: path_op
+
+    - name: Printing JDK FILE NAME
+      debug:
+         msg: /home/agd_user/playbooks/JDK_UPGRADE/JDK_BINARIES/{{ jdk_version.stdout }}
+
+    - fail:
+          msg: "FIle not found"
+      when: path_op.stat.exists == False
+
+- hosts: check
+  tasks:
+       - name: 'MAKE DESTINATION DIRECTORY'
+         file:
+               path: "{{ item }}"
+               state: directory
+               mode: '0755'
+         with_items:
+                - ~/JDK
+                - ~/JDK_TEMP/
+                - ~/JDK_OLD/
+
+       - name: "Check If directory is present or not"
+         find:
+             paths: ~/JDK
+             patterns: '*.*'
+         register: out1
+
+       - name: conditionals
+         shell: mv ~/JDK/* ~/JDK_OLD/
+         when: out1.matched > 0
+
+       - name: print DOmain PATH
+         debug:
+             msg: "{{ dom_path1 }}"
+
+       - name: print WL PATH
+         debug:
+             msg: "{{ wl_home1 }}"
+       - name: Printing Domain Name
+         shell: echo {{ dom_path1 }}  |  awk -F'/' '{print $NF}'
+         register: dom_name
+
+       - name: print domain
+         debug:
+            msg: "{{ dom_name.stdout }}"
+
+
+       - name: ' JDK NEW version is being copied to servers '
+         unarchive:
+               src: /home/agd_user/playbooks/JDK_UPGRADE/JDK_BINARIES/{{ hostvars[groups['self'][0]]['serial_var'] }}
+               dest: ~/JDK/
+               remote_src: no
+               force: no
+
+       - name: 'Tranferring TEMP FILES'
+         copy:
+           src: ~/playbooks/{{ item }}
+           dest: ~/JDK_TEMP/{{ item }}
+           force: no
+           mode: '0755'
+         with_items:
+               - jdk_file_list.txt
+               - compare_list.sh
+
+       - name: 'Old JDK VERSION'
+         shell: grep -i 'JDK' {{dom_path1}}/bin/setDomainEnv.sh | tail -1 | awk 'BEGIN{FS="/";}{print $NF;}' | sed 's/"//g'
+         register: new1
+
+       - name: Print Old JDK Version
+         debug:
+            msg: "{{ new1.stdout }}"
+       - name: 'Insert old JDK PATH into file'
+         shell: grep -i 'JDK'  {{ dom_path1 }}/bin/setDomainEnv.sh | tail -1 | awk 'BEGIN{FS="=";}{print $NF;}' | sed 's/"//g' | sed 's/\//\\\//g' > ~/JDK_TEMP/full_old_jdk_path
+
+
+       - name: 'NEW JDK version'
+         shell: ls -1d ~/JDK/* | sed 's/\//\\\//g'
+         register: new_jdk_dir_name
+
+       - name: 'JDK Version to be added'
+         copy:
+            content: "{{ new_jdk_dir_name.stdout }}"
+            dest: ~/JDK_TEMP/full_new_jdk_path
+
+       - name: 'FINDING FILES TO BE MODIFIED'
+         shell: grep -irl {{ new1.stdout }} {{ wl_home1 }}/* | grep -iv {{ exclude_dom }} | egrep -iv 'nohup.out\|xml\|rollback\|logs\|admin.out\|adminserver.log\|\.out\|\.log\|\.txt'
+         register: filename
+
+       - name: 'WRITING INTO FILE'
+         copy:
+              content: "{{ filename.stdout }}"
+              dest: ~/JDK_TEMP/temp_check.txt
+
+       - name: 'FILTER OUT FILES'
+         shell:  sh ~/JDK_TEMP/compare_list.sh | cat
+
+       - name: reading files
+         shell: cat ~/JDK_TEMP/final.txt
+         register: res
+
+       - name: register OLD JDK
+         shell: cat ~/JDK_TEMP/full_old_jdk_path
+         register: old_jdk
+
+       - name: register NEW JDK
+         shell: cat ~/JDK_TEMP/full_new_jdk_path
+         register: new_jdk
+
+       - name: Read Now
+         shell: sed -i 's/{{ old_jdk.stdout }}/{{ new_jdk.stdout }}/g' {{ item }}
+         with_items:
+              - "{{ res.stdout_lines }}"
+
+
+...
