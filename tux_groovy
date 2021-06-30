@@ -1,0 +1,156 @@
+pipeline {
+  agent {
+    node {
+      label 'master'
+    }
+
+  }
+  stages {
+    stage('Initiate mail') {
+      steps {
+		sh "/home/agd_user/.web/apache/htdocs/AIRTEL/TUX_MAIL/tux_bounce_mail.sh ${params.Change} ${params.Spoc}"
+      }
+    }
+	stage('Proceed action to start Tux activity') {
+      steps {
+        input 'Do you want to proceed to send mail and start tux bounce activity?'
+      }
+    }
+    stage('Mail for ncore and dunning') {
+      steps {
+        build 'Tuxbouncestopmail'
+      }
+    }
+    stage('Proceed action TuxApp stop') {
+      steps {
+        input 'Do you want to proceed to stop Tux and App Services?'
+      }
+    }
+    stage('Stop Websphere and Weblogic App') {
+      parallel {
+        stage('Stop ProvisioningOrder.war') {
+          steps {
+            build 'Stop_Teleatomprovisioning'
+          }
+        }
+        stage('Stop NMS') {
+          steps {
+            build 'StopNMS'
+          }
+        }
+        stage('Stop Ncore') {
+          steps {
+            build 'StopNcore'
+          }
+        }
+        stage('Stop Telemedia OFS') {
+          steps {
+            build 'StopTeleOFS'
+          }
+        }
+        stage('Stop Iworkflow') {
+          steps {
+            build 'StopIworkflow'
+          }
+        }
+      }
+    }
+    stage('StopTuxServices') {
+      parallel {
+        stage('StopTelemediaTuxServices') {
+          steps {
+            build 'StopMobTux'
+          }
+        }
+        stage('StopNMSTuxServices') {
+          steps {
+            build 'StopNMSTux'
+          }
+        }
+      }
+    }
+    stage('MOB_TELE_NMS TUX/APP Status_Stop') {
+      steps {
+        sh '/home/agd_user/JENKINS_SCRIPTS/health_Check/MOB_Tux_health.sh'
+      }
+    }
+	stage('Tux Log move') {
+          steps {
+            sh '''ssh -q arbor@10.14.5.141 \'/appdir/scripts/file_move.sh\'
+                  ssh -q arbor@10.14.5.108 \'/appdir/scripts/file_move.sh\''''
+          }
+        }
+    stage('Proceed action') {
+      steps {
+        input 'Do you want to proceed to start Tux and App Services?'
+      }
+    }
+    stage('StartTuxService') {
+      parallel {
+        stage('StartTelemediaTuxServices') {
+          steps {
+            build 'StartMobTux'
+          }
+        }
+        stage('StartNMSTuxServices') {
+          steps {
+            build 'StartNMSTux'
+          }
+        }
+      }
+    }
+    stage('Mid Mail') {
+      steps {
+        build 'TuxbounceMidmail'
+      }
+    }
+    stage('Start Websphere and Weblogic App') {
+      parallel {
+        stage('Start Telemedia OFS') {
+          steps {
+            build 'StartTeleOFS'
+          }
+        }
+        stage('Start NMS') {
+          steps {
+            build 'StartNMS'
+          }
+        }
+        stage('Start Ncore') {
+          steps {
+            build 'StartNcore'
+          }
+        }
+        stage('Start/Restart Iworkflow/TeleCRM') {
+          steps {
+            build 'StartIworkflow_TeleCRM'
+          }
+        }
+      }
+    }
+    stage('MOB_TELE_NMS TUX/APP Status_Start') {
+      steps {
+        sh '/home/agd_user/JENKINS_SCRIPTS/health_Check/MOB_Tux_health.sh'
+      }
+    }
+    stage('Proceed action atom war') {
+      steps {
+        input 'Do you want to start Telemedia Atom provisioning war?'
+      }
+    }
+    stage('Start Telemedia Atom war') {
+      steps {
+        build 'Start_Teleatomprovisioning'
+      }
+    }
+    stage('Final Mail') {
+      steps {
+        build 'TuxbounceFinalmail'
+      }
+     }
+	}
+	parameters {
+    string(name: 'Change', description: 'Enter Change number')
+    string(name: 'Spoc', description: 'Enter SPOC name')
+  }
+}
