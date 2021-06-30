@@ -1,0 +1,110 @@
+pipeline {
+ agent {
+    node {
+      label 'master'
+    }
+ }
+  stages {
+    stage('Input Arguments') {
+      steps {
+        sh "/home/agd_user/JENKINS_SCRIPTS/Get_Arguments_upgrade.sh ${params.hostgroup}  ${params.servergroup}"
+      }
+    }
+
+    stage('Proceed to check JDK File') {
+      steps {
+        input 'Proceed to check JDK File'
+      }
+    }
+
+    stage('Check JDK File') {
+      steps {
+        echo 'Check JDK File'
+        ansiblePlaybook(playbook: '/home/agd_user/playbooks/JDK_UPGRADE/Check_JDK.yml', extras: '-vv', inventory: '/etc/ansible/hosts', installation: '/usr/bin/')
+      }
+    }
+
+    stage('Proceed to Stop Application') {
+      steps {
+        input 'Proceed to stop Application'
+      }
+    }
+
+    stage('Stop application') {
+      steps {
+        echo 'Stop Application'
+        ansiblePlaybook(playbook: '/home/agd_user/playbooks/JDK_UPGRADE/stop_file.yml', inventory: '/etc/ansible/hosts', extras: '-vv', installation: '/usr/bin')
+      }
+    }
+
+    stage('Extract Files need to be changed') {
+      steps {
+        echo 'Extract Files need to be changed'
+        ansiblePlaybook(playbook: '/home/agd_user/playbooks/JDK_UPGRADE/JDK_File_Filter.yml', extras: '-vv', inventory: '/etc/ansible/hosts', installation: '/usr/bin/')
+      }
+    }
+
+    stage('Proceed to JDK Upgrade') {
+      steps {
+        input 'Proceed to JDK Upgrade'
+      }
+    }
+
+    stage('JDK Upgrade') {
+      steps {
+        echo 'JDK Upgrade'
+        ansiblePlaybook(playbook: '/home/agd_user/playbooks/JDK_UPGRADE/JDK_Upgrade.yml', extras: '-vv', inventory: '/etc/ansible/hosts', installation: '/usr/bin/')
+      }
+    }
+
+    stage('start Application') {
+      steps {
+        echo 'Start Application'
+        ansiblePlaybook(playbook: '/home/agd_user/playbooks/JDK_UPGRADE/start_file.yml', extras: '-vv', installation: '/usr/bin', inventory: '/etc/ansible/hosts')
+      }
+    }
+
+    stage('Send Mail') {
+      steps {
+        echo 'Send mail'
+      }
+    }
+
+  }
+  parameters {
+    choice(name: 'hostgroup', choices: '''jdk-8u221-linux-x64.tar.gz
+jdk-7u79-linux-x64.tar.gz''', description: 'Please choose JDK File')
+    choice(name: 'servergroup', choices: '''Mobility_Storefeedback_prepaid
+check
+Mobility_Storefeedback
+Mobility_Ebridge_Node1
+Mobility_DIRS_Node1
+Mobility_DIRS_Node2
+Mobility_DIRS_Node3
+Mobility_DIRS_Node4
+Mobility_DIRS_Node5
+Mobility_DIRS_Node6
+Mobility_DIRS_Node7
+Butterfly_DIRS_Node1
+Butterfly_DIRS_Node2
+Butterfly_DIRS_Node3
+Butterfly_KCI_Node1
+Butterfly_KCI_Node2
+Mobility_ECC
+Telemedia_Atom_Node1
+Telemedia_Atom_Node2
+Telemedia_Atom_Node3
+Telemedia_Atom_Node4
+Mobility_Selfcare_Node1
+Mobility_Selfcare_Node2
+Mobility_Selfcare_Node3
+ABGB_CWFS
+Mobility_Dunning
+Telemedia_AtomHa_Node1
+Telemedia_AtomHa_Node2
+Telemedia_AtomHa_Node3
+Telemedia_AtomHa_Node4
+Mobility_CAP_Node1
+Mobility_CAP_Node2''', description: 'Please choose Server Group')
+  }
+}
