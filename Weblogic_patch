@@ -1,0 +1,112 @@
+pipeline {
+  agent {
+    node {
+      label 'master'
+    }
+  }
+  stages {
+    stage('Input Arguments') {
+      steps {
+        sh "/home/agd_user/JENKINS_SCRIPTS/Get_Arguments.sh ${params.Patch_id} ${params.Host}"
+      }
+    }
+
+    stage('Proceed to check Patch Id') {
+      steps {
+        input 'Proceed to Check Patch Id'
+      }
+    }
+
+    stage('Check Patch Id') {
+      steps {
+        echo 'Check Patch Id'
+        ansiblePlaybook(playbook: '/home/agd_user/playbooks/check_file.yml', installation: '/usr/bin/', inventory: '/etc/ansible/hosts', extras: '-vv')
+      }
+    }
+
+    stage('Proceed to stop application') {
+      steps {
+        input 'Proceed to stop application'
+      }
+    }
+
+    stage('Stop Application') {
+      steps {
+        echo 'Stop Application'
+        ansiblePlaybook(playbook: '/home/agd_user/playbooks/stop_file.yml', installation: '/usr/bin', inventory: '/etc/ansible/hosts', extras: '-vv')
+      }
+    }
+
+    stage('Proceed to Apply Patch') {
+      steps {
+        input 'Proceed to Apply Patch'
+      }
+    }
+
+    stage('Apply Patch') {
+      steps {
+        echo 'Apply Patch'
+        ansiblePlaybook(playbook: '/home/agd_user/playbooks/patch_file.yml', installation: '/usr/bin', inventory: '/etc/ansible/hosts', extras: '-vv')
+      }
+    }
+
+    stage('Proceed to start application') {
+      steps {
+        input 'Proceed to start application'
+      }
+    }
+
+    stage('Start Application') {
+      steps {
+        echo 'Start Application'
+        ansiblePlaybook(playbook: '/home/agd_user/playbooks/start_file.yml', installation: '/usr/bin/', inventory: '/etc/ansible/hosts', extras: '-vv')
+      }
+    }
+
+    stage('Send Mail') {
+      steps {
+        echo 'Send Mail'
+        ansiblePlaybook(playbook: '/home/agd_user/playbooks/checkprocess.yml', installation: '/usr/bin', inventory: '/etc/ansible/hosts -vv')
+      }
+    }
+
+  }
+  parameters {
+    string(name: 'Patch_id', description: 'Enter Patch Id')
+    choice(name: 'Host',choices: '''
+Mobility_Storefeedback_prepaid
+Mobility_Storefeedback
+Mobility_ECC
+Mobility_CAP_Node1
+Mobility_CAP_Node2
+Mobility_CWFS
+Mobility_Selfcare_Node1
+Mobility_Selfcare_Node2
+Mobility_Selfcare_Node3
+Butterfly_DIRS_Node21
+Butterfly_DIRS_Node22
+Butterfly_DIRS_Node23
+Butterfly_DIRS_Node24
+Butterfly_DIRS_Node25
+Butterfly_DIRS_Node26
+Butterfly_DIRS_Node27
+Butterfly_DIRS_Node191
+Butterfly_DIRS_Node192
+Butterfly_DIRS_Node193
+Butterfy_NMS_Node1
+Butterfy_NMS_Node2
+Butterfly_APS_Node1
+Butterfly_APS_Node2
+Butterfly_KCI_Node1
+Butterfly_KCI_Node2
+Telemedia_Atom_Node1
+Telemedia_Atom_Node2
+Telemedia_Atom_Node3
+Telemedia_Atom_Node4
+Telemedia_AtomHa_Node1
+Telemedia_AtomHa_Node2
+Telemedia_AtomHa_Node3
+Telemedia_AtomHa_Node4
+''' , description: 'Please choose Server Group')
+  }
+}
