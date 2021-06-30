@@ -1,0 +1,78 @@
+[agd_user@localhost playbooks]$ cat weblogic_patch.yml
+---
+
+- name: test
+  hosts: self
+  gather_facts: no
+  vars_prompt:
+    - name: patch_id
+      prompt: "Enter Patch Id "
+      private: no
+  tasks:
+    - name: get details
+      shell: " find /home/agd_user/playbooks/WEBLOGIC_PATCHES/ -name '*{{patch_id}}*.zip' "
+      register: op
+
+    - name: check file status
+      stat:
+        path: "{{op.stdout}}"
+      register: file_status
+
+    - name: printing file name
+      debug:
+         msg: "{{ op.stdout}}"
+
+    - name: PROCEED OR NOT
+      fail: msg=" PATCH FILE not found"
+      when: file_status.stat.exists == False
+
+    - name: GET PATCH ID
+      shell: "echo {{op.stdout}} | awk -F'/' '{print $NF}'"
+      register: patch_name
+
+    - name: print patch name
+      debug:
+        msg: "{{ patch_name.stdout }}"
+    - set_fact:
+         serial_var: "{{ patch_name.stdout }}"
+
+    - set_fact:
+         serial_temp: "{{patch_id}}"
+
+- hosts: Mobility_Storefeedback_prepaid
+  gather_facts: no
+  tasks:
+    - name: printing wl_home
+      debug:
+        msg: "{{ wl_home }}"
+
+    - name: take backup of oracle home
+      command: cp -r {{ wl_home }} {{ wl_home }}_bkp_{{ ansible_date_time.date }}
+
+    - name: copy weblogic patch
+      unarchive:
+          src: "{{patch_path}}/{{ hostvars[groups['self'][0]]['serial_var'] }}"
+          dest: "{{wl_home}}/OPatch/PATCH_TOP"
+          remote_src: no
+      register: patchdest
+
+    - name: stop weblogic
+      shell: "$HOME/SCRIPTS/completestop.sh"
+
+    - pause:
+         seconds: 10
+    - notify:
+         - patching weblogic
+         - start weblogic
+    - name: patching weblogic
+      shell: "{{wl_home}}/OPatch/opatch apply {{patchdest.dest}}/{{ hostvars[groups['self'][0]]['serial_temp'] }} -silent"
+    - name: Listing Applied Patches
+      shell: "{{wl_home}}/OPatch/opatch lsinventory"
+    - pause:
+         seconds: 10
+    - notify:
+         - start weblogic
+    - name: start weblogic
+      shell: "$HOME/SCRIPTS/completestart.sh"
+
+...
