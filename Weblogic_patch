@@ -5,7 +5,7 @@ pipeline {
     }
   }
   stages {
-    stage('Input Arguments') {
+    stage('Input Argumentss') {
       steps {
         sh "/home/agd_user/JENKINS_SCRIPTS/Get_Arguments.sh ${params.Patch_id} ${params.Host}"
       }
