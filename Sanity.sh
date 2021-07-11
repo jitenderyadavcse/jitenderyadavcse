@@ -1,6 +1,6 @@
 [monitoring@N2VL-PA-AMIA01 sanity]$ cat Mobility_hourly_report.sh
 #!/bin/bash
-
+echo "this is new branch"
 
 #. ~/.profile
 . ~/.bashrc
