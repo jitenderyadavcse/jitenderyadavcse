@@ -26,7 +26,7 @@ pipeline {
 
     stage('Proceed to Stop Application') {
       steps {
-        input 'Proceed to stop Application'
+        input 'Proceed to stop MY Application'
       }
     }
 
