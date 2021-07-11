@@ -29,7 +29,7 @@ echo "From:Sanity_Alerts@airtel.com"  >> $wd/Sanity.html
 echo "To:GiTechIndiaAirtelMiddleware@amdocs.com" >> $wd/Sanity.html
 echo "Mime-Version:1.0;" >> $wd/Sanity.html
 echo "Content-Type:text/html;"            >> $wd/Sanity.html
-echo "Subject:MIDDLEWARE SANITY REPORT `date +%F`  "  >> $wd/Sanity.html
+echo "Subject:MIDDLEWARE SANITY REPORT Solid `date +%F`  "  >> $wd/Sanity.html
 
 echo "
 <HTML>
