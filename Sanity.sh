@@ -3,7 +3,7 @@
 
 
 #. ~/.profile
-#. ~/.bashrc
+. ~/.bashrc
 set -vx
 cd /home/monitoring/sanity
 wd="/home/monitoring/sanity"
